@@ -45,6 +45,10 @@ def cached(timeout=5 * 60, key='view/%s'):
 
 
 def get_stations():
+    """
+    Ruft Liste aller Stationen ab und gibt
+    Dict mit ID als Schlüssel und Name als Wert aus.
+    """
     url = "http://www.kvb-koeln.de/german/hst/overview/"
     r = requests.get(url, headers=HEADERS)
     soup = BeautifulSoup(r.text)
@@ -73,6 +77,9 @@ def get_stations():
 
 
 def get_station_details(station_id):
+    """
+    Liest Details zu einer Station.
+    """
     url = "http://www.kvb-koeln.de/german/hst/overview/%d/" % station_id
     r = requests.get(url, headers=HEADERS)
     soup = BeautifulSoup(r.text)
@@ -98,7 +105,7 @@ def get_station_details(station_id):
 
 def get_line_details(station_id, line_id):
     """
-    Finde heraus, welche Stationen eine Linie anfährt
+    Findet heraus, welche Stationen eine Linie anfährt
     """
     url = "http://www.kvb-koeln.de/german/hst/showline/%d/%d/" % (
         station_id, line_id)
