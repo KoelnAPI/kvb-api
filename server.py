@@ -70,6 +70,7 @@ def get_stations():
         station_dict[s["id"]] = s["name"]
     return station_dict
 
+
 @app.route("/")
 def index():
     output = {
@@ -90,6 +91,7 @@ def stations_list():
 
 
 @app.route("/stations/<int:station_id>/")
+@cached()
 def station_details(station_id):
     url = "http://www.kvb-koeln.de/german/hst/overview/%d/" % station_id
     r = requests.get(url, headers=HEADERS)
