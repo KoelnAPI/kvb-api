@@ -17,10 +17,10 @@ cache = SimpleCache()
 
 # URL templates fuer den Scraper
 URL_TEMPLATES = {
-    "station_details": "/german/hst/overview/{station_id:d}/",
-    "line_details": "/german/hst/showline/{station_id:d}/{line_id:d}/",
-    "schedule_table": "/german/hst/aushang/{station_id:d}/",
-    "schedule_pocket": "/german/hst/miniplan/{station_id:d}/",
+    "station_details": "/haltestellen/overview/{station_id:d}/",
+    "line_details": "/haltestellen/showline/{station_id:d}/{line_id:d}/",
+    "schedule_table": "/haltestellen/aushang/{station_id:d}/",
+    "schedule_pocket": "/haltestellen/miniplan/{station_id:d}/",
     "departures": "/qr/{station_id:d}/"
 }
 
@@ -49,7 +49,7 @@ def get_stations():
     Ruft Liste aller Stationen ab und gibt
     Dict mit ID als Schlüssel und Name als Wert aus.
     """
-    url = "http://www.kvb-koeln.de/german/hst/overview/"
+    url = "https://www.kvb.koeln/haltestellen/overview/"
     r = requests.get(url, headers=HEADERS)
     soup = BeautifulSoup(r.text)
     #print(soup.prettify())
@@ -80,7 +80,7 @@ def get_station_details(station_id):
     """
     Liest Details zu einer Station.
     """
-    url = "http://www.kvb-koeln.de/german/hst/overview/%d/" % station_id
+    url = "https://www.kvb.koeln/haltestellen/overview/%d/" % station_id
     r = requests.get(url, headers=HEADERS)
     soup = BeautifulSoup(r.text)
     details = {
@@ -88,7 +88,7 @@ def get_station_details(station_id):
         "name": stations[station_id],
         "line_ids": set()
     }
-    div = soup.find("div", class_="fliesstext")
+    div = soup.find("ul", class_="info-list")
     for a in div.find_all("a"):
         href = a.get("href")
         if href is None:
@@ -107,7 +107,7 @@ def get_line_details(station_id, line_id):
     """
     Findet heraus, welche Stationen eine Linie anfährt
     """
-    url = "http://www.kvb-koeln.de/german/hst/showline/%d/%d/" % (
+    url = "https://www.kvb.koeln/haltestellen/showline/%d/%d/" % (
         station_id, line_id)
     r = requests.get(url, headers=HEADERS)
     soup = BeautifulSoup(r.text)
@@ -118,8 +118,14 @@ def get_line_details(station_id, line_id):
         "stations_reverse": []
     }
     station_key = "stations_forward"
+    count = 0
     for td in soup.find_all("td", class_=re.compile(".*station")):
         tdclass = td.get("class")[0]
+        if tdclass == u'station-top':
+            count = count + 1
+            if count == 2:
+                station_key = "stations_reverse"
+
         a = td.find("a")
         if a is None:
             continue
@@ -132,8 +138,6 @@ def get_line_details(station_id, line_id):
         if result is None:
             continue
         details[station_key].append(int(result["station_id"]))
-        if tdclass == u'btstation':
-            station_key = "stations_reverse"
     return details
 
 
@@ -141,12 +145,12 @@ def get_departures(station_id):
     """
     Aktuelle Abfahrten von einer Station laden
     """
-    url = "http://www.kvb-koeln.de/qr/%d/" % station_id
+    url = "https://www.kvb.koeln/qr/%d/" % station_id
     r = requests.get(url, headers=HEADERS)
     soup = BeautifulSoup(r.text)
-    tables = soup.find_all("table", class_="qr_table")
+    tables = soup.find_all("table", class_="display")
     departures = []
-    for row in tables[1].find_all("tr"):
+    for row in tables[0].find_all("tr"):
         tds = row.find_all("td")
         (line_id, direction, time) = (tds[0].text, tds[1].text, tds[2].text)
         line_id = line_id.replace(u"\xa0", "")
